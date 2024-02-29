@@ -184,7 +184,6 @@ int main()
    
     GetCursorPos(&point);
 
-
     CoInitialize(nullptr);
     try {
         GetVolumeLevel(&volume);
@@ -198,15 +197,17 @@ int main()
     float x_pos = (float)point.x;
     float y_pos = (float)point.y;
 
+    float dead_x = 0.15f;
+    float dead_y = 0.15f;
+
     int mouseVelocity = 4;
 
-    float moveBy = 0.00001;
+    float moveBy = 0.0001;
     float volumeChange = 0.1;
 
     INPUT inputs[50] = {};
     bool buttonDown[50] = {};
     
-
     ZeroMemory(inputs, sizeof(inputs));
 
     bool controllerUse = true;
@@ -220,8 +221,6 @@ int main()
 
             DWORD result = XInputGetState(i, &state);
 
-            
-
             if (result == ERROR_SUCCESS)
             {
 
@@ -232,9 +231,13 @@ int main()
 
                 if (controllerUse) {
 
-                    x_pos += state.Gamepad.sThumbLX * moveBy;
-                    y_pos += -state.Gamepad.sThumbLY * moveBy;
-                  
+
+                    if (std::abs(state.Gamepad.sThumbLX) > dead_x) {
+                        x_pos += state.Gamepad.sThumbLX * moveBy;
+                    }
+                    if (std::abs(state.Gamepad.sThumbLY) > dead_x) {
+                        y_pos += state.Gamepad.sThumbLY * moveBy;
+                    }
 
                     if (state.Gamepad.bRightTrigger > 0 && buttonDown[0] != 1) {
 
