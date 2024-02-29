@@ -88,7 +88,7 @@ void printHelp() {
 
     std::cout << "D-Pad-Left: Windows Explorer" << std::endl;
 
-    std::cout << "D-Pad-Right: Windows Explorer" << std::endl;
+    std::cout << "D-Pad-Right: Start menu" << std::endl;
 
     std::cout << "D-Pad-Up: Volume up" << std::endl;
 
