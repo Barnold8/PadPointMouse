@@ -18,8 +18,8 @@ Change volume, you dont need to get up for nothing!
 # How to install
 
 Ensure you have:
-  Windows
-  An xbox controller (other may work but Xinput was used so xbox controllers were in mind here)
+-Windows
+-An xbox controller (other may work but Xinput was used so xbox controllers were in mind here)
 
 All you need to do is download the binary from the releases page or copy the repo and open up the solution and build for release mode! Release mode will be found in the usual place that visual studio puts that stuff. 
 
