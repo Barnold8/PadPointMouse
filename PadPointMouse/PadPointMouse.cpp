@@ -1,51 +1,25 @@
-
+#define NOMINMAX
 #include <Windows.h>
 #include <iostream>
 #include <mmsystem.h>
 #include <Xinput.h>
+#include <algorithm>    
 #include <shellapi.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
-
-
 #include <stdio.h>
 #include <mmdeviceapi.h>
 #include <endpointvolume.h>
+#include <initguid.h>
+#include <Objbase.h>
+#include <fstream>
+#include <vector>
+#include <sstream>
 
-
-
-
+#pragma hdrstop
 #pragma comment(lib, "Winmm.lib")
 
 // What even is this black magic 
-#include <initguid.h>
-#include <Objbase.h>
-#pragma hdrstop
-
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg) {
-    case WM_CLOSE:
-        DestroyWindow(hwnd);
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        TextOut(hdc, 10, 10, L"This is a notification message!", strlen("This is a notification message!"));
-        EndPaint(hwnd, &ps);
-    }
-    break;
-    default:
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    }
-    return 0;
-}
 
 // 4ce576fa-83dc-4F88-951c-9d0782b4e376
 DEFINE_GUID(CLSID_UIHostNoLaunch,
@@ -56,6 +30,68 @@ DEFINE_GUID(IID_ITipInvocation,
     0x37c994e7, 0x432b, 0x4834, 0xa2, 0xf7, 0xdc, 0xe1, 0xf1, 0x3b, 0x83, 0x4b);
 
 // What even is this black magic 
+
+
+class Settings {
+
+
+private:
+
+    float m_volumeChange;
+    float m_mouseAcceleration;
+
+    float m_deadX;
+    float m_deadY;
+    float m_deadZ;
+
+    int m_screenW;
+    int m_screenH;
+
+
+public:
+
+    Settings() {
+
+        WCHAR dbserver[1000];
+
+        GetPrivateProfileString(L"settings", L"mouse_acceleration", L"1", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
+        m_mouseAcceleration = wcstof(dbserver, NULL) * 0.00001f;
+
+        GetPrivateProfileString(L"settings", L"dead_zone_x", L"15", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
+        m_deadX = wcstof(dbserver, NULL) * 0.01f;
+
+        GetPrivateProfileString(L"settings", L"dead_zone_y", L"15", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
+        m_deadY = wcstof(dbserver, NULL) * 0.01f;
+
+        GetPrivateProfileString(L"settings", L"dead_zone_z", L"15", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
+        m_deadZ = wcstof(dbserver, NULL) * 0.01f;
+
+        GetPrivateProfileString(L"settings", L"volume_change_by", L"1", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
+        m_volumeChange = wcstof(dbserver, NULL) * 0.01f;
+
+        GetPrivateProfileString(L"settings", L"screen_width", L"1920", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
+        m_screenW = wcstol(dbserver, NULL, 10);
+
+        GetPrivateProfileString(L"settings", L"screen_height", L"1080", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
+        m_screenH = wcstol(dbserver, NULL, 10);
+
+
+        m_screenW = (m_screenW == 0) ? GetSystemMetrics(SM_CXSCREEN) : m_screenW;
+        m_screenH = (m_screenH == 0) ? GetSystemMetrics(SM_CYSCREEN) : m_screenH;
+
+    }
+
+    float getDeadX()             { return m_deadX; }
+    float getDeadY()             { return m_deadY; }
+    float getDeadZ()             { return m_deadY; }
+    float getVolumeChange()      { return m_volumeChange; };
+    float getMouseAcceleration() { return m_mouseAcceleration; }
+    int   getScreenW()           { return m_screenW; }
+    int   getScreenH()           { return m_screenH; }
+
+};
+
+
 
 void printHelp() {
 
@@ -100,7 +136,6 @@ void printHelp() {
 
     std::cout << "=========================================" << std::endl;
 }
-
 
 bool GetVolumeLevel(float* system_volume) {
     HRESULT hr;
@@ -175,8 +210,9 @@ struct ITipInvocation : IUnknown
 
 int main()
 {
-    printHelp();
+    Settings settings = Settings();
 
+    printHelp();
 
     float volume;
 
@@ -185,6 +221,7 @@ int main()
     GetCursorPos(&point);
 
     CoInitialize(nullptr);
+
     try {
         GetVolumeLevel(&volume);
     }
@@ -197,13 +234,12 @@ int main()
     float x_pos = (float)point.x;
     float y_pos = (float)point.y;
 
-    float dead_x = 0.15f;
-    float dead_y = 0.15f;
+    float dead_x = settings.getDeadX();
+    float dead_y = settings.getDeadY();
+    float dead_z = settings.getDeadZ();
 
-    int mouseVelocity = 4;
-
-    float moveBy = 0.0001;
-    float volumeChange = 0.1;
+    float moveBy = settings.getMouseAcceleration();
+    float volumeChange = settings.getVolumeChange();
 
     INPUT inputs[50] = {};
     bool buttonDown[50] = {};
@@ -225,18 +261,29 @@ int main()
             {
 
                 if (state.Gamepad.wButtons & XINPUT_GAMEPAD_Y && buttonDown[15] != 1) {
-                    controllerUse = !controllerUse;
 
+                    GetCursorPos(&point);
+                    controllerUse = !controllerUse;
                 }
 
                 if (controllerUse) {
 
 
-                    if (std::abs(state.Gamepad.sThumbLX) > dead_x) {
+                    if (std::abs(state.Gamepad.sThumbLX) > dead_x ) {
+
                         x_pos += state.Gamepad.sThumbLX * moveBy;
+                        x_pos = std::max(x_pos, 0.0f);
+                        x_pos = std::min(x_pos, (float)settings.getScreenW());
+                       
                     }
-                    if (std::abs(state.Gamepad.sThumbLY) > dead_x) {
-                        y_pos += state.Gamepad.sThumbLY * moveBy;
+
+                    if (std::abs(state.Gamepad.sThumbLY) > dead_y) {
+                        
+                        y_pos += -state.Gamepad.sThumbLY * moveBy;
+                        y_pos = std::max(y_pos, 0.0f);
+                        y_pos = std::min(y_pos, (float)settings.getScreenH());
+     
+
                     }
 
                     if (state.Gamepad.bRightTrigger > 0 && buttonDown[0] != 1) {
@@ -346,7 +393,7 @@ int main()
                     if (state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK && buttonDown[14] != 1) {
                         goto exit_while;
                     }
-                    if (std::abs(state.Gamepad.sThumbRY) > 0) {
+                    if (std::abs(state.Gamepad.sThumbRY) > 0 && std::abs(state.Gamepad.sThumbRY) > dead_z) {
                     
                         short actualValue = state.Gamepad.sThumbRY;
                         inputs[16].type = INPUT_MOUSE;

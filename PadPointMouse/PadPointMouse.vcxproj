@@ -143,6 +143,9 @@
   <ItemGroup>
     <ClCompile Include="PadPointMouse.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Settings.ini" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
