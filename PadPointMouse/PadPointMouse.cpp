@@ -98,6 +98,8 @@ void printHelp() {
 
     std::cout << "=============PadPointMouse===============" << std::endl;
 
+    std::cout << "\nIf you see the virtual keyboard, don't worry, this will only happen once.\n\nYou are seeing the virtual keyboard because process 'tabtip.exe' was not running.\n" << std::endl;
+
     std::cout << "=========================================" << std::endl;
 
     std::cout << "              How to use                 \n\n" << std::endl;
@@ -210,6 +212,10 @@ struct ITipInvocation : IUnknown
 
 int main()
 {
+
+    system("powershell -Command \"Start-Process 'C:\\Program Files\\Common Files\\microsoft shared\\ink\\TabTip.exe'\"");
+
+
     Settings settings = Settings();
 
     printHelp();
@@ -323,11 +329,17 @@ int main()
                         HRESULT hr;
                         hr = CoInitialize(0);
 
-                        ITipInvocation* tip;
-                        hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
-                        tip->Toggle(GetDesktopWindow());
-                        tip->Release();
+                        try {
+                            ITipInvocation* tip;
+                            hr = CoCreateInstance(CLSID_UIHostNoLaunch, 0, CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER, IID_ITipInvocation, (void**)&tip);
+                            tip->Toggle(GetDesktopWindow());
+                            tip->Release();
+                        }
+                        catch (...) {
+                        
+                            std::cout << "Error: Could not instantiate tabtip.exe" << std::endl;
 
+                        }
 
                     }
 
@@ -399,6 +411,7 @@ int main()
                         inputs[16].type = INPUT_MOUSE;
                         inputs[16].mi.dwFlags = MOUSEEVENTF_WHEEL;
                         mouse_event(inputs[16].mi.dwFlags, inputs[16].mi.dx, inputs[16].mi.dy, state.Gamepad.sThumbRY * 0.001, inputs[16].mi.dwExtraInfo);
+                    
                     }
 
                     SetCursorPos(x_pos, y_pos);
@@ -409,7 +422,7 @@ int main()
                 UINT uSent = SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
                 if (uSent != ARRAYSIZE(inputs))
                 {
-                    std::cout << "Error ya mum" << std::endl;
+                    std::cout << "Error: Could not send input keys to system." << std::endl;
                 }
 
                 if (
@@ -458,8 +471,6 @@ int main()
                 buttonDown[15] = (state.Gamepad.wButtons & XINPUT_GAMEPAD_Y) ? 1 : 0;
                 buttonDown[16] = (std::abs(state.Gamepad.sThumbRY) > 0) ? 1 : 0;
 
-
-  
                 ZeroMemory(inputs, sizeof(inputs));
             }
 
