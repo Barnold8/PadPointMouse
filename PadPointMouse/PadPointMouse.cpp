@@ -58,13 +58,13 @@ public:
         m_mouseAcceleration = wcstof(dbserver, NULL) * 0.00001f;
 
         GetPrivateProfileString(L"settings", L"dead_zone_x", L"15", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
-        m_deadX = wcstof(dbserver, NULL) * 0.01f;
+        m_deadX = wcstof(dbserver, NULL) * 100;
 
         GetPrivateProfileString(L"settings", L"dead_zone_y", L"15", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
-        m_deadY = wcstof(dbserver, NULL) * 0.01f;
+        m_deadY = wcstof(dbserver, NULL) * 100;
 
         GetPrivateProfileString(L"settings", L"dead_zone_z", L"15", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
-        m_deadZ = wcstof(dbserver, NULL) * 0.01f;
+        m_deadZ = wcstof(dbserver, NULL) * 100;
 
         GetPrivateProfileString(L"settings", L"volume_change_by", L"1", dbserver, sizeof(dbserver) / sizeof(dbserver[0]), L".\\settings.ini");
         m_volumeChange = wcstof(dbserver, NULL) * 0.01f;
@@ -276,7 +276,7 @@ int main()
 
 
                     if (std::abs(state.Gamepad.sThumbLX) > dead_x ) {
-
+                        
                         x_pos += state.Gamepad.sThumbLX * moveBy;
                         x_pos = std::max(x_pos, 0.0f);
                         x_pos = std::min(x_pos, (float)settings.getScreenW());
